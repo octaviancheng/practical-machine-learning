@@ -1,0 +1,147 @@
+---
+title: "Practical Machine Learning Project"
+author: "Octavian Cheng"
+date: "20/06/2015"
+output: html_document
+---
+# Executive summary
+The aim of this project is to build a classifier which determines how well a human is lifting a dumbbell. There are 5 classes (Class A to E) in this classification problem. Each class represents the way how the human is lifting the dumbbell. A random forest classifier is built. The optimal value of the tuning parameter of the random forest classifier is determined by cross-validation. The best model obtained after choosing the optimal parameter gives an estimated out-of-sample accuracy rate of 99.75%. 
+
+# Introduction
+The data set is obtained from http://groupware.les.inf.puc-rio.br/har [1]. Six participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions:
+
+* Exactly according to the specification (Class A)
+* Throwing the elbows to the front (Class B)
+* Lifting the dumbbell only halfway (Class C)
+* Lowering the dumbbell only halfway (Class D)
+* Throwing the hips to the front (Class E).
+
+Four devices, which include a belt sensor, a glove sensor, an arm-band sensor and a dumbbell sensor, are used to measure the three-axes acceleration, gyroscope and magnetometer readings.
+
+# Preprocessing and data partition
+From the raw data set, it can be observed that some features are related to the names and IDs of the participants. Some of the features are also related to the timestamps and the window numbers. These are all removed from the feature set since we are focussing on classification based on sensor readings only, not the names and IDs of the participants. Some of the features are derived from from the raw sensor readings for a given window, for example, kurtosis and skewness, etc. These features are sparse data in the training set and they are missing from the test set; therefore they are also excluded from the feature set of interest.
+
+The following shows a list of features that will be used to train a classifier. The features include the roll, pitch and yaw angles, as well as the accelerometer, gyroscope and magnetometer readings in the x, y and z axes and the total acceleration of the belt, arm, dumbbell and forearms sensors.
+
+```{r}
+library(randomForest)
+library(caret)
+
+trainingData <- read.csv("pml-training.csv")
+testingData <- read.csv("pml-testing.csv")
+
+featureNameList <- c(
+    "roll_belt",        "pitch_belt",       "yaw_belt",         "total_accel_belt", 
+    "gyros_belt_x",     "gyros_belt_y",     "gyros_belt_z",
+    "accel_belt_x",     "accel_belt_y",     "accel_belt_z",
+    "magnet_belt_x",    "magnet_belt_y",    "magnet_belt_z",
+    "roll_arm",         "pitch_arm",        "yaw_arm",          "total_accel_arm",
+    "gyros_arm_x",      "gyros_arm_y",      "gyros_arm_z",         
+    "accel_arm_x",      "accel_arm_y",      "accel_arm_z",         
+    "magnet_arm_x",     "magnet_arm_y",     "magnet_arm_z",        
+    "roll_dumbbell",    "pitch_dumbbell",   "yaw_dumbbell",     "total_accel_dumbbell", 
+    "gyros_dumbbell_x", "gyros_dumbbell_y", "gyros_dumbbell_z",
+    "accel_dumbbell_x", "accel_dumbbell_y", "accel_dumbbell_z",
+    "magnet_dumbbell_x","magnet_dumbbell_y","magnet_dumbbell_z",
+    "roll_forearm",     "pitch_forearm",    "yaw_forearm",      "total_accel_forearm",
+    "gyros_forearm_x",  "gyros_forearm_y",  "gyros_forearm_z",
+    "accel_forearm_x",  "accel_forearm_y",  "accel_forearm_z",
+    "magnet_forearm_x", "magnet_forearm_y", "magnet_forearm_z")
+```
+
+The training data is split into two partitions. 20% of the training data is left aside and is called the "validation set". This "validation set" is not involved in any part of the training process and is purely used for estimating the out-of-sample accuracy of the trained model. The remaining 80% of the data is used for training the model.
+
+```{r}
+# Split the training data into two sets. One for training the model. One is called
+# "validation set" which is not involved in training the model and is left aside
+# for estimating out-of-sample accuracy.
+set.seed(1234)
+trainingModelIndices <- createDataPartition(y = trainingData$classe, p = 0.8, list = FALSE)
+trainingModelData <- trainingData[trainingModelIndices, ]
+validationData <- trainingData[-trainingModelIndices, ]
+```
+
+# Model training and cross validation
+A random forest classifier is trained using the training data and caret package. From the documentation of the caret package (https://topepo.github.io/caret/modelList.html), there is one tuning parameter called "mtry" which is the number of variables that are randomly sampled at each split of the tree node. Cross validation is performed here to determine the optimal value of "mtry" based on the cross-validation accuracy.
+
+By default, the $train$ function evaluates the cross-validation accuracy for only 3 possible values of a tuning parameter. This might not be enough for our case since there are 52 features. A tune grid for "mtry" is manually defined and consists of these numbers: 1, 2, 4, 8, 16, 32, 52. For each of these possible values of "mtry", a 5-fold cross validation is performed and the average cross-validation accuracy rate is calculated across all the 5 folds. The optimal "mtry" is determined by choosing the one which has the highest average cross-validation accuracy rate.
+
+```{r, cache=TRUE}
+# Some script to enable parallel processing for fast training of the models 
+library(doParallel)
+cl <- makeCluster(detectCores())
+registerDoParallel(cl)
+
+# Train the random forest classifier using cross-validation.
+# Only feed the trainingModelData for training the model. Leave the "validation set"
+# untouched.
+# Only use the above features list for training.
+# Within the random forest algorithm, there is a parameter called "mtry" which 
+# is the number of variables randomly sampled as candidates at each split. The 
+# optimal value of this "mtry" parameter can be determined by cross-validation.
+# Here we are doing the 5-fold cross validation.
+trainCtrl <- trainControl(
+    method = "cv",
+    number = 5,
+    allowParallel = TRUE)
+
+# We specifify a vector of "mtry" parameters from which cross validation will 
+# choose the optimal one according to classification accuracy. Note that 52 is
+# the total number of features in the data set.
+mtryVec <- data.frame(mtry = c(1, 2, 4, 8, 16, 32, 52))
+
+rfFit <- train(x = trainingModelData[, featureNameList],
+               y = trainingModelData$classe,
+               method = "rf",
+               trControl = trainCtrl,
+               tuneGrid = mtryVec)
+
+print(rfFit)
+```
+
+From the above output, it can be seen that when the "mtry" parameter equals to 8, the cross-validation accuracy is the highest with 99.50%. Therefore, the best model is chosen when "mtry" equals to 8.
+
+The following plot shows that the cross-validation accuracy against the possible "mtry" values examined during the training process. Again, it shows that the model reaches the highest cross-validation accuracy when "mtry" equals to 8.
+
+```{r, echo=FALSE}
+plot(rfFit, main = "Cross-validation accuracy vs\nNumber of randomly-selected predictors (mtry)")
+```
+
+# Estimating out-of-sample accuracy
+Once the model has been built, the out-of-sample accuracy can be determined by passing the "validation set" to the model. Note that the "validation set" is not involved in the training process; therefore it gives a robust estimation of the out-of-sample accuracy.
+
+The following code calculates the out-of-sample accuracy and confusion matrix. It can be seen that the estimation of the out-of-sample accuracy rate is about 99.75%.
+
+```{r}
+# Using the best model and the "validation set" to estimate the out-of-sample accuracy rate
+validationPred <- predict(rfFit$finalModel, newdata = validationData[, featureNameList])
+
+confusionMatrix(data = validationPred, reference = validationData$classe)
+```
+
+# Conclusions
+A random forest classifier is trained for classifying the way a human is lifting a dumbbell. The optimal value of the "mtry" parameter is determined by 5-fold cross validation. Using the model with this optimal "mtry" parameter, the out-of-sample accuracy rate is estimated to be 99.75%.
+
+```{r, echo=FALSE}
+save.image(file = "pml-project.RData")
+
+# The following code is for generating the predictions for the test set
+testPred <- predict(rfFit$finalModel, newdata = testingData[, featureNameList])
+
+if (!file.exists("testDir"))  {
+    dir.create("testDir")
+}
+
+pml_write_files <- function(x){
+  n <- length(x)
+  for(i in 1:n){
+    filename <- paste0("testDir/problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+pml_write_files(testPred)
+```
+
+# Reference
+[1] Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
