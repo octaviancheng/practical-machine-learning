@@ -5,7 +5,7 @@ date: "20/06/2015"
 output: html_document
 ---
 # Executive summary
-The aim of this project is to build a classifier which determines how well a human is lifting a dumbbell. There are 5 classes (Class A to E) in this classification problem. Each class represents the way how the human is lifting the dumbbell. A random forest classifier is built. The optimal value of the tuning parameter of the random forest classifier is determined by cross-validation. The best model obtained after choosing the optimal parameter gives an estimated out-of-sample accuracy rate of 99.75%. 
+The aim of this project is to build a classifier which determines how well a human is lifting a dumbbell. There are 5 classes (Class A to E) in this classification problem. Each class represents the way how the human is lifting the dumbbell. A random forest classifier is built. The optimal value of the tuning parameter of the random forest classifier is determined by cross-validation. The best model obtained after choosing the optimal parameter gives an estimated out-of-sample accuracy rate of 99.75%, that is, the estimated out-of-sample error rate is 0.25%. 
 
 # Introduction
 The data set is obtained from http://groupware.les.inf.puc-rio.br/har [1]. Six participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions:
@@ -110,7 +110,7 @@ plot(rfFit, main = "Cross-validation accuracy vs\nNumber of randomly-selected pr
 # Estimating out-of-sample accuracy
 Once the model has been built, the out-of-sample accuracy can be determined by passing the "validation set" to the model. Note that the "validation set" is not involved in the training process; therefore it gives a robust estimation of the out-of-sample accuracy.
 
-The following code calculates the out-of-sample accuracy and confusion matrix. It can be seen that the estimation of the out-of-sample accuracy rate is about 99.75%.
+The following code calculates the out-of-sample accuracy and confusion matrix. It can be seen that the estimation of the out-of-sample accuracy rate is about 99.75%. In other words, the estimated out-of-sample error rate is 0.25%.
 
 ```{r}
 # Using the best model and the "validation set" to estimate the out-of-sample accuracy rate
@@ -120,7 +120,7 @@ confusionMatrix(data = validationPred, reference = validationData$classe)
 ```
 
 # Conclusions
-A random forest classifier is trained for classifying the way a human is lifting a dumbbell. The optimal value of the "mtry" parameter is determined by 5-fold cross validation. Using the model with this optimal "mtry" parameter, the out-of-sample accuracy rate is estimated to be 99.75%.
+A random forest classifier is trained for classifying the way a human is lifting a dumbbell. The optimal value of the "mtry" parameter is determined by 5-fold cross validation. Using the model with this optimal "mtry" parameter, the out-of-sample accuracy rate is estimated to be 99.75% (that is, the out-of-sample error rate is 0.25%).
 
 ```{r, echo=FALSE}
 save.image(file = "pml-project.RData")

@@ -70,7 +70,7 @@ img {
 
 <div id="executive-summary" class="section level1">
 <h1>Executive summary</h1>
-<p>The aim of this project is to build a classifier which determines how well a human is lifting a dumbbell. There are 5 classes (Class A to E) in this classification problem. Each class represents the way how the human is lifting the dumbbell. A random forest classifier is built. The optimal value of the tuning parameter of the random forest classifier is determined by cross-validation. The best model obtained after choosing the optimal parameter gives an estimated out-of-sample accuracy rate of 99.75%.</p>
+<p>The aim of this project is to build a classifier which determines how well a human is lifting a dumbbell. There are 5 classes (Class A to E) in this classification problem. Each class represents the way how the human is lifting the dumbbell. A random forest classifier is built. The optimal value of the tuning parameter of the random forest classifier is determined by cross-validation. The best model obtained after choosing the optimal parameter gives an estimated out-of-sample accuracy rate of 99.75%, that is, the estimated out-of-sample error rate is 0.25%.</p>
 </div>
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
@@ -193,7 +193,7 @@ rfFit &lt;- train(x = trainingModelData[, featureNameList],
 <div id="estimating-out-of-sample-accuracy" class="section level1">
 <h1>Estimating out-of-sample accuracy</h1>
 <p>Once the model has been built, the out-of-sample accuracy can be determined by passing the “validation set” to the model. Note that the “validation set” is not involved in the training process; therefore it gives a robust estimation of the out-of-sample accuracy.</p>
-<p>The following code calculates the out-of-sample accuracy and confusion matrix. It can be seen that the estimation of the out-of-sample accuracy rate is about 99.75%.</p>
+<p>The following code calculates the out-of-sample accuracy and confusion matrix. It can be seen that the estimation of the out-of-sample accuracy rate is about 99.75%. In other words, the estimated out-of-sample error rate is 0.25%.</p>
 <pre class="r"><code># Using the best model and the &quot;validation set&quot; to estimate the out-of-sample accuracy rate
 validationPred &lt;- predict(rfFit$finalModel, newdata = validationData[, featureNameList])
 
@@ -232,7 +232,7 @@ confusionMatrix(data = validationPred, reference = validationData$classe)</code>
 </div>
 <div id="conclusions" class="section level1">
 <h1>Conclusions</h1>
-<p>A random forest classifier is trained for classifying the way a human is lifting a dumbbell. The optimal value of the “mtry” parameter is determined by 5-fold cross validation. Using the model with this optimal “mtry” parameter, the out-of-sample accuracy rate is estimated to be 99.75%.</p>
+<p>A random forest classifier is trained for classifying the way a human is lifting a dumbbell. The optimal value of the “mtry” parameter is determined by 5-fold cross validation. Using the model with this optimal “mtry” parameter, the out-of-sample accuracy rate is estimated to be 99.75% (that is, the out-of-sample error rate is 0.25%).</p>
 </div>
 <div id="reference" class="section level1">
 <h1>Reference</h1>
